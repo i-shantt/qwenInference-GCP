@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Qwen Inference</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050816;
+        --panel: #111827;
+        --accent: #6366f1;
+        --accent-soft: rgba(99, 102, 241, 0.2);
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --border: #1f2937;
+        --danger: #f97373;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at top, #1f2937 0, #020617 55%);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", sans-serif;
+        color: var(--text);
+      }
+      .shell {
+        width: min(900px, 100% - 2rem);
+        background: radial-gradient(circle at top left, #1f2937 0, #020617 55%);
+        border-radius: 1.25rem;
+        padding: 1.25rem 1.25rem 1.5rem;
+        box-shadow:
+          0 20px 45px rgba(15, 23, 42, 0.9),
+          0 0 0 1px rgba(148, 163, 184, 0.1);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        backdrop-filter: blur(18px);
+      }
+      .shell-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      .dots {
+        display: flex;
+        gap: 0.4rem;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+      }
+      .dot.red { background: #f87171; }
+      .dot.amber { background: #fbbf24; }
+      .dot.green { background: #34d399; }
+      .title {
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .badge {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid rgba(129, 140, 248, 0.5);
+        background: linear-gradient(
+          135deg,
+          rgba(129, 140, 248, 0.18),
+          rgba(56, 189, 248, 0.1)
+        );
+        color: #e5e7eb;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2.5fr) minmax(0, 3fr);
+        gap: 1rem;
+      }
+      @media (max-width: 768px) {
+        .grid { grid-template-columns: minmax(0, 1fr); }
+      }
+      .panel {
+        background: radial-gradient(circle at top, #020617 0, #020617 55%);
+        border-radius: 0.9rem;
+        padding: 0.9rem;
+        border: 1px solid var(--border);
+        box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.6);
+      }
+      label {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 0.25rem;
+      }
+      textarea {
+        width: 100%;
+        min-height: 160px;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: radial-gradient(circle at top left, #020617 0, #020617 65%);
+        color: var(--text);
+        padding: 0.75rem 0.8rem;
+        resize: vertical;
+        font: inherit;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease,
+          background 0.15s ease;
+      }
+      textarea:focus {
+        border-color: rgba(129, 140, 248, 0.85);
+        box-shadow:
+          0 0 0 1px rgba(129, 140, 248, 0.65),
+          0 18px 35px rgba(15, 23, 42, 0.9);
+        background: radial-gradient(circle at top left, #020617 0, #020617 65%);
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.6rem;
+      }
+      .hint {
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+      button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.9rem;
+        border-radius: 999px;
+        border: none;
+        background: linear-gradient(
+          135deg,
+          rgba(129, 140, 248, 1),
+          rgba(56, 189, 248, 1)
+        );
+        color: white;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow:
+          0 10px 25px rgba(56, 189, 248, 0.35),
+          0 0 0 1px rgba(15, 23, 42, 0.9);
+        transform: translateY(0);
+        transition: transform 0.1s ease, box-shadow 0.1s ease,
+          filter 0.1s ease;
+      }
+      button span.icon {
+        font-size: 0.9rem;
+      }
+      button:disabled {
+        cursor: default;
+        filter: grayscale(0.3);
+        box-shadow: none;
+        opacity: 0.8;
+      }
+      button:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow:
+          0 16px 35px rgba(56, 189, 248, 0.4),
+          0 0 0 1px rgba(15, 23, 42, 0.9);
+      }
+      button:not(:disabled):active {
+        transform: translateY(0);
+        box-shadow:
+          0 8px 18px rgba(56, 189, 248, 0.3),
+          0 0 0 1px rgba(15, 23, 42, 0.9);
+      }
+      .output-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.4rem;
+      }
+      .output-title {
+        font-size: 0.8rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .status-pill {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.5rem;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.7);
+        color: var(--muted);
+      }
+      .status-pill.live {
+        border-color: rgba(34, 197, 94, 0.8);
+        color: #bbf7d0;
+      }
+      .output-box {
+        min-height: 160px;
+        max-height: 260px;
+        padding: 0.75rem 0.8rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(15, 23, 42, 1);
+        background: radial-gradient(circle at top right, #020617 0, #020617 75%);
+        box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.9);
+        overflow-y: auto;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+      .output-placeholder {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+      .error {
+        margin-top: 0.4rem;
+        font-size: 0.8rem;
+        color: var(--danger);
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="shell-header">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div class="dots">
+            <span class="dot red"></span>
+            <span class="dot amber"></span>
+            <span class="dot green"></span>
+          </div>
+          <div>
+            <div class="title">qwen-inference / simple UI</div>
+            <div style="font-size:0.75rem; color:var(--muted);">
+              Send prompts directly to your Cloud Run model.
+            </div>
+          </div>
+        </div>
+        <span class="badge">Cloud Run • Qwen 4B</span>
+      </header>
+
+      <section class="grid">
+        <section class="panel">
+          <label for="prompt">Prompt</label>
+          <textarea
+            id="prompt"
+            placeholder="Ask Qwen anything…"
+          ></textarea>
+          <div class="controls">
+            <div class="hint">
+              Press <code>⌘⏎</code> or <code>Ctrl⏎</code> to send.
+            </div>
+            <button id="sendBtn">
+              <span class="icon">⚡</span>
+              <span>Generate</span>
+            </button>
+          </div>
+          <div id="error" class="error" style="display:none;"></div>
+        </section>
+
+        <section class="panel">
+          <div class="output-header">
+            <div class="output-title">Model Response</div>
+            <div id="statusPill" class="status-pill live">Live</div>
+          </div>
+          <div id="output" class="output-box">
+            <div class="output-placeholder">
+              The reply from Qwen will appear here.
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const promptEl = document.getElementById("prompt");
+      const sendBtn = document.getElementById("sendBtn");
+      const outputEl = document.getElementById("output");
+      const errorEl = document.getElementById("error");
+      const statusPill = document.getElementById("statusPill");
+
+      function setLoading(isLoading) {
+        if (isLoading) {
+          sendBtn.disabled = true;
+          sendBtn.querySelector("span.icon").textContent = "⏳";
+          sendBtn.querySelector("span:last-child").textContent = "Generating…";
+          statusPill.textContent = "Thinking…";
+          statusPill.classList.add("live");
+        } else {
+          sendBtn.disabled = false;
+          sendBtn.querySelector("span.icon").textContent = "⚡";
+          sendBtn.querySelector("span:last-child").textContent = "Generate";
+          statusPill.textContent = "Live";
+          statusPill.classList.add("live");
+        }
+      }
+
+      async function sendPrompt() {
+        const prompt = promptEl.value.trim();
+        errorEl.style.display = "none";
+        errorEl.textContent = "";
+
+        if (!prompt) {
+          errorEl.textContent = "Please enter a prompt.";
+          errorEl.style.display = "block";
+          return;
+        }
+
+        setLoading(true);
+        outputEl.innerHTML =
+          '<div class="output-placeholder">Waiting for response…</div>';
+
+        try {
+          const res = await fetch("/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt }),
+          });
+
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(
+              "Request failed with status " +
+                res.status +
+                ": " +
+                text.slice(0, 200)
+            );
+          }
+
+          const data = await res.json();
+          const content = (data && data.output) || "(no output)";
+          outputEl.textContent = content;
+        } catch (err) {
+          console.error(err);
+          errorEl.textContent =
+            "Error calling /generate: " + (err.message || err);
+          errorEl.style.display = "block";
+          outputEl.innerHTML =
+            '<div class="output-placeholder">No response.</div>';
+          statusPill.textContent = "Error";
+          statusPill.classList.remove("live");
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      sendBtn.addEventListener("click", () => {
+        sendPrompt();
+      });
+
+      promptEl.addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+          e.preventDefault();
+          sendPrompt();
+        }
+      });
+    </script>
+  </body>
+</html>

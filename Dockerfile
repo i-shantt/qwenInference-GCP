@@ -1,5 +1,4 @@
-# For Cloud Run CPU: use python:3.11-slim and install torch (CPU) in requirements.
-# For Cloud Run with GPU: keep this base and ensure your Cloud Run service has GPU allocated.
+# For Cloud Run with GPU: ensure your Cloud Run service has GPU allocated.
 FROM nvidia/cuda:12.1.0-devel-ubuntu22.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3-pip python3-dev \
