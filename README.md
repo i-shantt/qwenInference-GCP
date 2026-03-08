@@ -25,15 +25,15 @@ Follow these steps to build and deploy the application to Google Cloud.
 Build the container image for your project:
 
 ```bash
-# gcloud builds submit --tag gcr.io/PROJECT_ID/SERVICE_NAME:v1 --project PROJECT_ID
+gcloud builds submit --tag gcr.io/PROJECT_ID/SERVICE_NAME:v1 --project PROJECT_ID
 ```
 ### 2. Deploy using Google Cloud Run
 ```bash
-# gcloud run deploy SERVICE_NAME \
-  --image gcr.io/YOUR_PROJECT_ID/SERVICE_NAME:v1 \
+gcloud run deploy qwen-inference \
+  --image gcr.io/qweninference/qwen-inference:v1 \
   --platform managed \
-  --region YOUR_REGION \
-  --project PROJECT_ID \
+  --region us-east4 \
+  --project qweninference \
   --memory 16Gi \
   --cpu 4 \
   --gpu 1 \
