@@ -40,4 +40,4 @@ gcloud run deploy qwen-inference \
   --gpu-type nvidia-l4 \
   --allow-unauthenticated
 ```
-
+NOTE: To see and access the web application, make sure to add "/ui" at the end of the URL generated.
